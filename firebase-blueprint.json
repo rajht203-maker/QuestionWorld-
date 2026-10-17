@@ -1,0 +1,458 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information for QuestionForge 10 student",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Student display name"
+        },
+        "targetClass": {
+          "type": "string",
+          "description": "Target class level, defaults to Class 10"
+        },
+        "preferredSubject": {
+          "type": "string",
+          "description": "User preferred subject"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Account creation ISO timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Account update ISO timestamp"
+        }
+      },
+      "required": ["userId", "email", "displayName"]
+    },
+    "QuestionHistoryItem": {
+      "title": "QuestionHistoryItem",
+      "description": "Record of a question generation session",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique history entry ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the creator"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject name"
+        },
+        "chapter": {
+          "type": "string",
+          "description": "Chapter name"
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "Difficulty level: NORMAL, HARD, VERY HARD"
+        },
+        "questionType": {
+          "type": "string",
+          "description": "Type of questions generated"
+        },
+        "count": {
+          "type": "number",
+          "description": "Number of questions generated"
+        },
+        "questions": {
+          "type": "array",
+          "description": "List of generated questions"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "userId", "subject", "chapter", "difficulty", "questions", "createdAt"]
+    },
+    "FavouriteQuestion": {
+      "title": "FavouriteQuestion",
+      "description": "An individual question bookmarked by the user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique favourite entry ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "question": {
+          "type": "string",
+          "description": "The question text"
+        },
+        "type": {
+          "type": "string",
+          "description": "Question type"
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "Question difficulty"
+        },
+        "options": {
+          "type": "array",
+          "description": "MCQ options if applicable"
+        },
+        "answer": {
+          "type": "string",
+          "description": "Answer or solution"
+        },
+        "explanation": {
+          "type": "string",
+          "description": "Detailed explanation"
+        },
+        "chapter": {
+          "type": "string",
+          "description": "Chapter name"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject name"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when favourited"
+        }
+      },
+      "required": ["id", "userId", "question", "answer", "chapter", "createdAt"]
+    },
+    "SavedTestPaper": {
+      "title": "SavedTestPaper",
+      "description": "Full mock test paper generated and saved by user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique test paper ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "title": {
+          "type": "string",
+          "description": "Test title"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject name"
+        },
+        "chapters": {
+          "type": "array",
+          "description": "Covered chapters"
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "Test difficulty"
+        },
+        "totalMarks": {
+          "type": "number",
+          "description": "Total marks for the paper"
+        },
+        "timeLimit": {
+          "type": "number",
+          "description": "Time limit in minutes"
+        },
+        "sections": {
+          "type": "array",
+          "description": "Structured sections with questions"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "userId", "title", "subject", "totalMarks", "sections", "createdAt"]
+    },
+    "PracticeStats": {
+      "title": "PracticeStats",
+      "description": "Aggregated stats for practice tracking",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "questionsPracticed": {
+          "type": "number",
+          "description": "Total questions practiced"
+        },
+        "testsCompleted": {
+          "type": "number",
+          "description": "Total tests submitted"
+        },
+        "correctCount": {
+          "type": "number",
+          "description": "Total correct answers"
+        },
+        "incorrectCount": {
+          "type": "number",
+          "description": "Total incorrect answers"
+        },
+        "weeklyActivity": {
+          "type": "array",
+          "description": "Activity count for each day of the week"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp"
+        }
+      },
+      "required": ["userId"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized administrator details",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Admin email address"
+        },
+        "role": {
+          "type": "string",
+          "description": "super_admin or admin"
+        },
+        "addedBy": {
+          "type": "string",
+          "description": "Email of the admin who granted access"
+        },
+        "addedAt": {
+          "type": "string",
+          "description": "ISO timestamp when admin was added"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Admin display name"
+        }
+      },
+      "required": ["email", "role", "addedAt"]
+    },
+    "ConvertedQuiz": {
+      "title": "ConvertedQuiz",
+      "description": "AI converted quiz from uploaded PDF document",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Quiz unique ID"
+        },
+        "title": {
+          "type": "string",
+          "description": "Quiz title"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject name"
+        },
+        "targetClass": {
+          "type": "string",
+          "description": "Target class level"
+        },
+        "sourceFileName": {
+          "type": "string",
+          "description": "Original PDF filename"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation ISO timestamp"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Admin email who created the quiz"
+        },
+        "totalMarks": {
+          "type": "number",
+          "description": "Total marks for the quiz"
+        },
+        "timeLimitMinutes": {
+          "type": "number",
+          "description": "Recommended time in minutes"
+        },
+        "generalInstructions": {
+          "type": "array",
+          "description": "Header instructions for the quiz or PDF",
+          "items": { "type": "string" }
+        },
+        "questions": {
+          "type": "array",
+          "description": "List of simple quiz questions",
+          "items": { "type": "object" }
+        }
+      },
+      "required": ["id", "title", "subject", "questions", "createdAt"]
+    },
+    "CustomSubject": {
+      "title": "CustomSubject",
+      "description": "Administrator-created custom curriculum subject",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "key": { "type": "string" },
+        "description": { "type": "string" },
+        "iconName": { "type": "string" },
+        "supportedTypes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "chapters": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "subCategories": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["id", "name", "key", "description", "supportedTypes"]
+    },
+    "AppSettings": {
+      "title": "AppSettings",
+      "description": "Global academic session, rules, announcements and controls",
+      "type": "object",
+      "properties": {
+        "activeAcademicSession": { "type": "string" },
+        "activeTerm": { "type": "string" },
+        "announcement": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "message": { "type": "string" },
+            "type": { "type": "string" },
+            "linkText": { "type": "string" }
+          }
+        },
+        "examRules": {
+          "type": "object",
+          "properties": {
+            "strictExamMode": { "type": "boolean" },
+            "competencyQuestionRatio": { "type": "number" },
+            "passingScorePercent": { "type": "number" },
+            "allowPdfDownload": { "type": "boolean" },
+            "showAiSolutionsImmediately": { "type": "boolean" }
+          }
+        },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      }
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "Student and educator community discussion, questions, doubt resolution, and study material sharing",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorEmail": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "content": { "type": "string" },
+        "subject": { "type": "string" },
+        "tag": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "attachmentName": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "attachmentType": { "type": "string" },
+        "likesCount": { "type": "number" },
+        "likedBy": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "commentsCount": { "type": "number" },
+        "comments": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "isDisabled": { "type": "boolean" },
+        "disabledReason": { "type": "string" },
+        "disabledBy": { "type": "string" },
+        "isPinned": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "authorId", "authorName", "content", "createdAt"]
+    },
+    "CommunityRestriction": {
+      "title": "CommunityRestriction",
+      "description": "Admin conductor restriction applied to specific users or posting privileges",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "isRestricted": { "type": "boolean" },
+        "reason": { "type": "string" },
+        "restrictedBy": { "type": "string" },
+        "restrictedAt": { "type": "string" },
+        "canPost": { "type": "boolean" },
+        "canComment": { "type": "boolean" }
+      },
+      "required": ["id", "userEmail", "isRestricted"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminEmail}": {
+      "schema": "AdminUser",
+      "description": "Authorized administrators list"
+    },
+    "/convertedQuizzes/{quizId}": {
+      "schema": "ConvertedQuiz",
+      "description": "AI converted quizzes from uploaded question PDFs"
+    },
+    "/customSubjects/{subjectId}": {
+      "schema": "CustomSubject",
+      "description": "Custom subjects created and managed by administrators"
+    },
+    "/appSettings/{settingDoc}": {
+      "schema": "AppSettings",
+      "description": "Global application configuration including academic session and exam controls"
+    },
+    "/communityPosts/{postId}": {
+      "schema": "CommunityPost",
+      "description": "Public community lounge posts, notes, diagrams, and question sharing"
+    },
+    "/communityRestrictions/{userKey}": {
+      "schema": "CommunityRestriction",
+      "description": "Admin conductor moderation restrictions for community participants"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Private user profile document"
+    },
+    "/users/{userId}/questionHistory/{historyId}": {
+      "schema": "QuestionHistoryItem",
+      "description": "History of questions generated by the user"
+    },
+    "/users/{userId}/favouriteQuestions/{favId}": {
+      "schema": "FavouriteQuestion",
+      "description": "Saved favourite questions for the user"
+    },
+    "/users/{userId}/savedTests/{testId}": {
+      "schema": "SavedTestPaper",
+      "description": "Saved test papers generated by the user"
+    },
+    "/users/{userId}/practiceStats/{statsId}": {
+      "schema": "PracticeStats",
+      "description": "User practice statistics"
+    }
+  }
+}
