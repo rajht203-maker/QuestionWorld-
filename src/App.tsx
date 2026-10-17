@@ -325,6 +325,7 @@ function MainAppContent() {
             onQuickGenerate={handleQuickGenerate}
             onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
             onOpenTimer={() => setActiveTab('timer')}
+            onNavigateToAdmin={() => setActiveTab('admin')}
           />
 
           {/* PAGE ROUTING */}

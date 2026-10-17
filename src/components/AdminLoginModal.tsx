@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, LogIn, X, AlertTriangle, CheckCircle, Mail, Lock } from 'lucide-react';
 import { loginWithGoogle, logoutUser } from '../services/firebase';
-import { checkIsUserAdmin, SUPER_ADMIN_EMAILS } from '../services/adminService';
+import { checkIsUserAdmin, maskEmail } from '../services/adminService';
 import { User } from 'firebase/auth';
 
 interface AdminLoginModalProps {
@@ -19,6 +19,15 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isCurrentAdmin, setIsCurrentAdmin] = useState(false);
+
+  React.useEffect(() => {
+    if (currentUser?.email) {
+      checkIsUserAdmin(currentUser.email).then(setIsCurrentAdmin);
+    } else {
+      setIsCurrentAdmin(false);
+    }
+  }, [currentUser]);
 
   if (!isOpen) return null;
 
@@ -37,7 +46,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
         onClose();
       } else {
         setErrorMsg(
-          `Signed in as "${user.email}", but this email does not have administrator privileges. Please sign in with ${SUPER_ADMIN_EMAILS[0]}, ${SUPER_ADMIN_EMAILS[1]} or an authorized admin email.`
+          'This Google account does not have administrator privileges. Please sign in with an authorized administrator account.'
         );
       }
     } catch (err: any) {
@@ -93,22 +102,43 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           )}
 
           {currentUser ? (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-center space-y-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Currently logged in as:</p>
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-center space-y-2.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400">Current Session:</p>
               <div className="font-semibold text-sm text-slate-900 dark:text-white flex items-center justify-center gap-1.5">
-                <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span>{currentUser.email}</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{maskEmail(currentUser.email)}</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                Need to log in with an authorized admin account?
-              </p>
-              <button
-                onClick={handleSwitchAccount}
-                disabled={loading}
-                className="w-full mt-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {loading ? 'Switching Account...' : 'Sign in with Admin Google Account'}
-              </button>
+
+              {isCurrentAdmin ? (
+                <div className="space-y-2 pt-2">
+                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300 font-bold">
+                    ✓ Verified Administrator Privileges Confirmed
+                  </div>
+                  <button
+                    onClick={() => {
+                      onAdminLoginSuccess();
+                      onClose();
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Enter Admin Console Now</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2 pt-1">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Need to log in with an authorized academic admin account?
+                  </p>
+                  <button
+                    onClick={handleSwitchAccount}
+                    disabled={loading}
+                    className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {loading ? 'Switching Account...' : 'Sign in with Admin Google Account'}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -127,14 +157,14 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
           )}
 
-          {/* Super Admin Notice */}
+          {/* Security Notice */}
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 text-center space-y-1">
             <div className="flex items-center justify-center gap-1 text-slate-700 dark:text-slate-300 font-medium">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Authorized Super Administrators</span>
+              <span>Protected Administrator Access</span>
             </div>
-            <p className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
-              {SUPER_ADMIN_EMAILS.join(' • ')}
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              Authorized academic faculty only. Credentials are strictly verified.
             </p>
           </div>
         </div>

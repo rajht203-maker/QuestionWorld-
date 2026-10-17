@@ -54,7 +54,7 @@ export const CBSE_CLASS_10_SYLLABUS: Record<string, SubjectConfig> = {
       'Mixed'
     ],
     chapters: [
-      { id: 'sci-1', name: 'Chemical Reactions and Equations', unit: 'Chemical Substances - Nature and Behaviour', topics: ['Chemical Equations', 'Types of Chemical Reactions', 'Corrosion and Rancidity'] },
+      { id: 'sci-1', name: 'Chemical Reactions and Equations', unit: 'Chemical Substances - Nature and Behaviour', topics: ['Chemical Equations & Balancing', 'Types of Reactions', 'Oxidation and Reduction', 'Corrosion and Rancidity'] },
       { id: 'sci-2', name: 'Acids, Bases and Salts', unit: 'Chemical Substances - Nature and Behaviour', topics: ['Properties of Acids and Bases', 'pH Scale and Applications', 'Common Salts (Bleaching Powder, Baking Soda, Washing Soda, Plaster of Paris)'] },
       { id: 'sci-3', name: 'Metals and Non-metals', unit: 'Chemical Substances - Nature and Behaviour', topics: ['Physical and Chemical Properties', 'Reactivity Series', 'Ionic Compounds', 'Basic Metallurgical Processes'] },
       { id: 'sci-4', name: 'Carbon and Its Compounds', unit: 'Chemical Substances - Nature and Behaviour', topics: ['Covalent Bonding', 'Versatile Nature of Carbon', 'Homologous Series', 'Functional Groups', 'Combustion, Oxidation, Addition, Substitution'] },

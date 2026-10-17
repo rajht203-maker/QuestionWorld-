@@ -19,6 +19,7 @@ import {
   Award
 } from 'lucide-react';
 import { useTimer } from '../context/TimerContext';
+import { PWAInstallButton } from './PWAInstallButton';
 
 export type NavTab = 'dashboard' | 'quizzes' | 'generator' | 'test_builder' | 'saved' | 'timer' | 'community' | 'profile' | 'landing' | 'admin';
 
@@ -264,7 +265,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           )}
-        </div>
+        {/* PWA App Install Card */}
+        <PWAInstallButton variant="sidebar" />
 
         {/* CBSE syllabus alignment footer note */}
         <div className="p-3 rounded-xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 text-xs">

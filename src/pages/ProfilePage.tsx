@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { StudentProfile } from '../types';
 import { User } from 'firebase/auth';
-import { loginWithGoogle, logoutUser } from '../services/firebase';
+import { loginWithGoogle, loginAsStudent, logoutUser } from '../services/firebase';
 import { saveStudentProfile } from '../utils/storage';
+import { EasyLoginModal } from '../components/EasyLoginModal';
 import {
   User as UserIcon,
   ShieldCheck,
@@ -20,7 +21,7 @@ import {
   Shield,
   ArrowRight
 } from 'lucide-react';
-import { checkIsUserAdmin, isSuperAdmin } from '../services/adminService';
+import { checkIsUserAdmin, isSuperAdmin, maskEmail } from '../services/adminService';
 
 interface ProfilePageProps {
   profile: StudentProfile;
@@ -45,6 +46,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [preferredSubject, setPreferredSubject] = useState(profile.preferredSubject);
   const [authLoading, setAuthLoading] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   React.useEffect(() => {
     if (currentUser?.email) {
@@ -146,35 +148,45 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">
-                  {(currentUser.displayName || 'U')[0]}
+                  {(currentUser.displayName || 'S')[0]}
                 </div>
               )}
               <div>
                 <p className="font-bold text-sm text-slate-900 dark:text-white">
-                  {currentUser.displayName}
+                  {currentUser.displayName || (isSuperAdmin(currentUser.email) ? 'Chief Academic Administrator' : 'CBSE Student Scholar')}
                 </p>
-                <p className="text-xs text-slate-500">{currentUser.email}</p>
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>{maskEmail(currentUser.email)}</span>
+                </div>
               </div>
             </div>
 
             <button
               onClick={handleSignOut}
               disabled={authLoading}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Sign Out</span>
             </button>
           </div>
         ) : (
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>Easy Student Sign-in</span>
+            </button>
             <button
               onClick={handleGoogleLogin}
               disabled={authLoading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold shadow-sm transition-all"
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
             >
               <LogIn className="w-4 h-4" />
-              <span>{authLoading ? 'Connecting to Google...' : 'Sign in with Google to Sync'}</span>
+              <span>{authLoading ? 'Connecting...' : 'Sign in with Google'}</span>
             </button>
           </div>
         )}
@@ -196,7 +208,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-indigo-200/80">
-                  {currentUser?.email} has full administrative privileges to convert PDFs to simple quizzes and manage the CBSE question repository.
+                  Your account has full administrative privileges to convert PDFs to simple quizzes and manage the CBSE question repository.
                 </p>
               </div>
             </div>
@@ -307,6 +319,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Easy Login Modal */}
+      <EasyLoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        currentUser={currentUser}
+        onNavigateToAdmin={onNavigateToAdmin}
+      />
     </div>
   );
 };

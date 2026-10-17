@@ -1,5 +1,13 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInAnonymously,
+  updateProfile,
+  signOut,
+  onAuthStateChanged,
+  User,
+} from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -84,6 +92,19 @@ export async function loginWithGoogle(): Promise<User | null> {
     return result.user;
   } catch (error) {
     console.error('Google sign-in error:', error);
+    throw error;
+  }
+}
+
+export async function loginAsStudent(studentName = 'Class 10 Scholar'): Promise<User> {
+  try {
+    const cred = await signInAnonymously(auth);
+    if (studentName && cred.user) {
+      await updateProfile(cred.user, { displayName: studentName });
+    }
+    return cred.user;
+  } catch (error) {
+    console.warn('Anonymous login error:', error);
     throw error;
   }
 }

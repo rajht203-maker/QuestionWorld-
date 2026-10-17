@@ -19,6 +19,7 @@ import {
   getLocalRestrictions,
   saveUserRestriction
 } from '../services/communityService';
+import { isSuperAdmin, maskEmail } from '../services/adminService';
 import {
   MessageSquare,
   Heart,
@@ -209,7 +210,9 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
     try {
       const authorId = currentUser?.uid || 'guest-student';
       const authorName = currentUser?.displayName || 'Class 10 Scholar';
-      const authorEmail = currentUser?.email || 'scholar@cbseclass10.edu';
+      const authorEmail = currentUser?.email
+        ? (isSuperAdmin(currentUser.email) ? 'admin@cbse-portal.edu' : maskEmail(currentUser.email))
+        : 'scholar@cbseclass10.edu';
       const authorPhoto = currentUser?.photoURL || undefined;
 
       await createCommunityPost({
@@ -268,7 +271,9 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
     try {
       const authorId = currentUser?.uid || 'guest-student';
       const authorName = currentUser?.displayName || 'Class 10 Scholar';
-      const authorEmail = currentUser?.email || 'scholar@cbseclass10.edu';
+      const authorEmail = currentUser?.email
+        ? (isSuperAdmin(currentUser.email) ? 'admin@cbse-portal.edu' : maskEmail(currentUser.email))
+        : 'scholar@cbseclass10.edu';
       const authorPhoto = currentUser?.photoURL || undefined;
 
       const newComm = await addPostComment(postId, {
@@ -847,7 +852,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
                                 {post.authorName}
                               </span>
 
-                              {post.authorEmail.includes('admin') || post.authorEmail === 'princerajmth5@gmail.com' || post.authorEmail === 'rajht203@gmail.com' ? (
+                              {post.authorEmail.includes('admin') || isSuperAdmin(post.authorEmail) ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 text-[10px] font-extrabold uppercase tracking-wide">
                                   <Shield className="w-3 h-3" />
                                   <span>Conductor</span>

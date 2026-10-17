@@ -21,8 +21,17 @@ function getGeminiClient(): GoogleGenAI {
 }
 
 export async function handleGenerateQuestionsBackend(body: any) {
-  const { subject, chapter, topic, difficulty, questionType, count } = body;
+  const { subject, chapter, topic, topics, difficulty, questionType, count } = body;
   const numQuestions = Math.min(Math.max(Number(count) || 5, 1), 50);
+
+  // Normalize selected topics list
+  const selectedTopicsList: string[] = [];
+  if (Array.isArray(topics) && topics.length > 0) {
+    selectedTopicsList.push(...topics.filter((t: any) => typeof t === 'string' && t.trim().length > 0));
+  } else if (typeof topic === 'string' && topic.trim().length > 0) {
+    selectedTopicsList.push(...topic.split(',').map((s: string) => s.trim()).filter(Boolean));
+  }
+  const topicsSummary = selectedTopicsList.join(', ');
 
   const ai = getGeminiClient();
 
@@ -36,9 +45,14 @@ export async function handleGenerateQuestionsBackend(body: any) {
     difficultyGuidelines = 'Challenging multi-step questions, higher-order thinking (HOTS), unfamiliar situations, multiple concepts combined, complex case studies, and advanced board-level reasoning. Do not make it tricky merely by confusing wording; it must test deep conceptual mastery within CBSE Class 10 boundaries.';
   }
 
+  const topicGuideline = topicsSummary
+    ? `Target Sub-Topics: [${topicsSummary}]. CRITICAL: Every generated question MUST strictly concentrate on and evaluate concepts from these specific sub-topic(s) within the chapter "${chapter}". Clearly tag each question's 'topic' field with the specific sub-topic tested.`
+    : `Chapter Focus: "${chapter}". Cover core concepts within this chapter.`;
+
   const systemInstruction = `You are an expert CBSE Class 10 question paper setter and chief examiner.
 Generate original, strictly syllabus-aligned questions for CBSE Class 10 students.
-Stay strictly within the specified chapter and CBSE Class 10 NCERT curriculum. Avoid unrelated topics.
+Stay strictly within the specified chapter and CBSE Class 10 NCERT curriculum.
+${topicGuideline}
 Follow CBSE Class 10 cognitive level. Never invent textbook facts.
 Never claim generated questions are actual previous-year questions (avoid fabricated PYQs).
 Avoid duplicate questions.
@@ -51,12 +65,14 @@ Difficulty instructions: ${difficultyGuidelines}`;
   const prompt = `Class: 10
 Subject: ${subject}
 Chapter: ${chapter}
-${topic ? `Topic Focus: ${topic}` : ''}
+${topicsSummary ? `Target Sub-Topics to Focus On: ${topicsSummary}` : ''}
 Difficulty Level: ${difficulty}
 Requested Question Type: ${questionType}
 Number of Questions to Generate: ${numQuestions}
 
-Create exactly ${numQuestions} distinct CBSE Class 10 questions meeting all requirements.`;
+Create exactly ${numQuestions} distinct CBSE Class 10 questions meeting all requirements.${
+    topicsSummary ? ` Ensure all questions test concepts from the selected sub-topic(s): ${topicsSummary}.` : ''
+  }`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3.8-flash',

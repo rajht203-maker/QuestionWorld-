@@ -22,7 +22,7 @@ import {
   isSuperAdmin,
   fetchAllConvertedQuizzes,
   deleteConvertedQuizFromCloud,
-  SUPER_ADMIN_EMAILS
+  maskEmail
 } from '../services/adminService';
 import { loginWithGoogle, logoutUser } from '../services/firebase';
 import { ConvertedQuiz } from '../types';
@@ -102,9 +102,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         const authorized = await checkIsUserAdmin(user.email);
         if (authorized) {
           setIsAdmin(true);
-          onShowToast(`Welcome, Administrator ${user.displayName || user.email}!`, 'success');
+          onShowToast('Welcome, Administrator!', 'success');
         } else {
-          onShowToast(`Signed in as ${user.email}, but this account lacks administrator rights.`, 'error');
+          onShowToast('Signed in successfully, but this account lacks administrator rights.', 'error');
         }
       }
     } catch (err: any) {
@@ -174,7 +174,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs space-y-2">
               <span className="text-slate-500 block">Signed in with student account:</span>
               <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                {currentUser.email}
+                {maskEmail(currentUser.email)}
               </span>
               <p className="text-rose-600 dark:text-rose-400 text-[11px] pt-1">
                 Account does not have administrator privileges.
@@ -202,9 +202,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           )}
 
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400">
-            Designated Administrators:
-            <span className="font-mono text-indigo-600 dark:text-indigo-400 ml-1 block mt-0.5">
-              {SUPER_ADMIN_EMAILS.join(' & ')}
+            Restricted Console:
+            <span className="text-slate-500 dark:text-slate-400 ml-1 block mt-0.5">
+              Protected administrator access only. Contact your academic administrator for access.
             </span>
           </div>
         </div>
@@ -238,7 +238,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           <div className="flex items-center gap-2">
             <div className="px-3.5 py-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-xs">
               <span className="text-indigo-200 block text-[10px]">Logged in as</span>
-              <span className="font-bold">{currentUser?.email}</span>
+              <span className="font-bold">{currentUser?.displayName || (isSuperAdmin(currentUser?.email) ? 'Chief Academic Administrator' : 'Administrator')}</span>
             </div>
           </div>
         </div>

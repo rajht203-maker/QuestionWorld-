@@ -51,6 +51,39 @@ export function isSuperAdmin(email?: string | null): boolean {
   return SUPER_ADMIN_EMAILS.some(e => normalizeEmail(e) === normalized);
 }
 
+/**
+ * Mask email address for privacy and hide admin/user gmail addresses
+ */
+export function maskEmail(email?: string | null): string {
+  if (!email) return 'User Account';
+  const normalized = normalizeEmail(email);
+  if (isSuperAdmin(normalized)) {
+    return 'Lead Administrator (Protected Identity)';
+  }
+  if (normalized.includes('admin') || normalized.includes('faculty')) {
+    return 'Authorized Faculty (Protected)';
+  }
+  if (normalized.includes('gmail')) {
+    return 'Protected Scholar Account';
+  }
+  return 'Protected User Account';
+}
+
+/**
+ * Returns safe public display identity without leaking private gmail
+ */
+export function getSafeDisplayTitle(email?: string | null, displayName?: string | null): string {
+  if (isSuperAdmin(email)) {
+    return displayName && !displayName.includes('@') && !displayName.includes('rajht') && !displayName.includes('princ')
+      ? displayName
+      : 'Chief Academic Administrator';
+  }
+  if (displayName && !displayName.includes('@') && !displayName.includes('rajht')) {
+    return displayName;
+  }
+  return 'Verified Academic User';
+}
+
 // Get cached local admins
 function getLocalAdmins(): AdminUser[] {
   try {
@@ -71,11 +104,11 @@ function saveLocalAdmins(admins: AdminUser[]): void {
 }
 
 export async function fetchAuthorizedAdmins(): Promise<AdminUser[]> {
-  const superAdmins: AdminUser[] = SUPER_ADMIN_EMAILS.map(email => ({
+  const superAdmins: AdminUser[] = SUPER_ADMIN_EMAILS.map((email, idx) => ({
     email,
     role: 'super_admin',
     addedAt: '2025-01-01T00:00:00.000Z',
-    displayName: email.split('@')[0],
+    displayName: idx === 1 ? 'Chief Academic Administrator' : 'Lead Curriculum Director',
   }));
 
   try {
@@ -87,12 +120,14 @@ export async function fetchAuthorizedAdmins(): Promise<AdminUser[]> {
       const email = normalizeEmail(data.email || docSnap.id);
       // Skip if already in superAdmins
       if (!superAdmins.some(s => normalizeEmail(s.email) === email)) {
+        const rawName = data.displayName || 'Authorized Educator';
+        const cleanName = rawName.includes('@') ? 'Academic Faculty' : rawName;
         firestoreAdmins.push({
           email,
           role: 'admin',
-          addedBy: data.addedBy || 'Super Admin',
+          addedBy: 'Senior Administrator',
           addedAt: data.addedAt || new Date().toISOString(),
-          displayName: data.displayName || email.split('@')[0],
+          displayName: cleanName,
         });
       }
     });

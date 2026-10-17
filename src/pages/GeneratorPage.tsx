@@ -35,7 +35,9 @@ import {
   ChevronDown,
   Printer,
   FileText,
-  Check
+  Check,
+  Tag,
+  Plus
 } from 'lucide-react';
 
 interface GeneratorPageProps {
@@ -55,6 +57,8 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
   const [selectedSubjectKey, setSelectedSubjectKey] = useState<string>(initialSubject);
   const [selectedSubCategoryKey, setSelectedSubCategoryKey] = useState<string>('');
   const [selectedChapterId, setSelectedChapterId] = useState<string>('all');
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [customTopicInput, setCustomTopicInput] = useState<string>('');
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('NORMAL');
   const [questionType, setQuestionType] = useState<QuestionType>('Mixed');
   const [questionCount, setQuestionCount] = useState<number>(5);
@@ -103,14 +107,42 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
       setSelectedSubCategoryKey('');
     }
     setSelectedChapterId('all');
+    setSelectedTopics([]);
+    setCustomTopicInput('');
   }, [selectedSubjectKey]);
+
+  // When chapter changes, reset topics
+  useEffect(() => {
+    setSelectedTopics([]);
+    setCustomTopicInput('');
+  }, [selectedChapterId]);
 
   // Derived chapters list
   const availableChapters = getChaptersForSubject(selectedSubjectKey, selectedSubCategoryKey, customSubjects);
 
-  // Get active chapter name
+  // Get active chapter name and topics
   const activeChapterObj = availableChapters.find(c => c.id === selectedChapterId);
   const chapterName = activeChapterObj ? activeChapterObj.name : 'Full Syllabus / Multiple Chapters';
+  const availableTopics = activeChapterObj?.topics || [];
+
+  const handleToggleTopic = (topicName: string) => {
+    setSelectedTopics(prev => {
+      if (prev.includes(topicName)) {
+        return prev.filter(t => t !== topicName);
+      } else {
+        return [...prev, topicName];
+      }
+    });
+  };
+
+  const handleAddCustomTopic = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = customTopicInput.trim();
+    if (trimmed && !selectedTopics.includes(trimmed)) {
+      setSelectedTopics(prev => [...prev, trimmed]);
+      setCustomTopicInput('');
+    }
+  };
 
   // Handle Question Generation
   const handleGenerate = async () => {
@@ -119,9 +151,12 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
     setShowPrintWorksheet(false);
 
     try {
+      const topicString = selectedTopics.length > 0 ? selectedTopics.join(', ') : undefined;
       const result = await generateQuestionsWithAI({
         subject: currentSubject.name,
         chapter: chapterName,
+        topic: topicString,
+        topics: selectedTopics.length > 0 ? selectedTopics : undefined,
         difficulty,
         questionType,
         count: questionCount,
@@ -134,13 +169,16 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
         setGenerationNotice(result.message);
         onShowToast(result.message, 'info');
       } else {
-        onShowToast(`Generated ${result.questions.length} CBSE questions!`, 'success');
+        const topicNotice = selectedTopics.length > 0 ? ` on ${selectedTopics.join(', ')}` : '';
+        onShowToast(`Generated ${result.questions.length} CBSE questions${topicNotice}!`, 'success');
       }
 
       // Save to Question History
       const historyEntry: QuestionHistoryItem = {
         id: `hist-${Date.now()}`,
-        title: `${currentSubject.name}: ${chapterName} (${difficulty})`,
+        title: `${currentSubject.name}: ${chapterName}${
+          selectedTopics.length > 0 ? ` [${selectedTopics.join(', ')}]` : ''
+        } (${difficulty})`,
         subject: currentSubject.name,
         chapter: chapterName,
         difficulty,
@@ -382,6 +420,134 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
             </div>
           </div>
         </div>
+
+        {/* TOPICS SELECTOR (Appears after a specific chapter is chosen) */}
+        {selectedChapterId !== 'all' && (
+          <div
+            id="chapter-topics-selector"
+            className="p-4 md:p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/70 border border-indigo-100 dark:border-indigo-950/80 space-y-3.5 transition-all"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <Tag className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Focus Sub-Topics</span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                      {selectedTopics.length === 0
+                        ? `All (${availableTopics.length})`
+                        : `${selectedTopics.length} Active`}
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Filter questions to specific concepts within <strong>{chapterName}</strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-1.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTopics([])}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer text-xs ${
+                    selectedTopics.length === 0
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  All Topics
+                </button>
+                {availableTopics.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTopics([...availableTopics])}
+                      className="px-2.5 py-1 rounded-lg font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 text-xs transition-colors cursor-pointer"
+                    >
+                      Select All
+                    </button>
+                    {selectedTopics.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTopics([])}
+                        className="px-2.5 py-1 rounded-lg font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs transition-colors cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Topic Chips */}
+            {availableTopics.length > 0 ? (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {availableTopics.map(topic => {
+                  const isSelected = selectedTopics.includes(topic);
+                  return (
+                    <button
+                      key={topic}
+                      type="button"
+                      onClick={() => handleToggleTopic(topic)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                          : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50/40 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 ${
+                          isSelected ? 'bg-white/20 text-white' : 'border border-slate-300 dark:border-slate-600'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </span>
+                      <span>{topic}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 italic">
+                No predefined sub-topics for this chapter. You can add a custom topic focus below.
+              </p>
+            )}
+
+            {/* Custom Topic write-in form */}
+            <form onSubmit={handleAddCustomTopic} className="pt-1 flex items-center gap-2 max-w-md">
+              <input
+                type="text"
+                value={customTopicInput}
+                onChange={e => setCustomTopicInput(e.target.value)}
+                placeholder="Add specific concept (e.g. 'Types of Reactions')..."
+                className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+              />
+              <button
+                type="submit"
+                disabled={!customTopicInput.trim()}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 disabled:opacity-50 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
+            </form>
+
+            {/* AI Focus Guidance */}
+            {selectedTopics.length > 0 && (
+              <div className="text-[11px] text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 p-2.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                <span>
+                  <strong>AI Targeted Generation:</strong> Questions will specifically test concepts from{' '}
+                  <strong>{selectedTopics.join(', ')}</strong>.
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* DIFFICULTY LEVEL SELECTION */}
         <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">

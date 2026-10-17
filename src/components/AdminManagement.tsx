@@ -17,7 +17,7 @@ import {
   addAdminUser,
   removeAdminUser,
   isSuperAdmin,
-  SUPER_ADMIN_EMAILS
+  maskEmail,
 } from '../services/adminService';
 import { User } from 'firebase/auth';
 
@@ -74,7 +74,7 @@ export const AdminManagement: React.FC<AdminManagementProps> = ({
       setAdmins(prev => [...prev, created]);
       setNewAdminEmail('');
       setNewAdminName('');
-      onShowToast(`Administrator privileges granted to ${cleanEmail}!`, 'success');
+      onShowToast('Administrator privileges granted successfully!', 'success');
     } catch (err: any) {
       console.error('Add admin error:', err);
       onShowToast(err?.message || 'Failed to add administrator.', 'error');
@@ -93,7 +93,7 @@ export const AdminManagement: React.FC<AdminManagementProps> = ({
       await removeAdminUser(emailToRemove, currentUser?.email || 'Super Admin');
       setAdmins(prev => prev.filter(a => a.email.toLowerCase() !== emailToRemove.toLowerCase()));
       setConfirmRemoveEmail(null);
-      onShowToast(`Administrator privileges revoked for ${emailToRemove}.`, 'info');
+      onShowToast('Administrator privileges revoked.', 'info');
     } catch (err: any) {
       console.error('Remove admin error:', err);
       onShowToast(err?.message || 'Failed to revoke administrator.', 'error');
@@ -129,7 +129,7 @@ export const AdminManagement: React.FC<AdminManagementProps> = ({
                   required
                   value={newAdminEmail}
                   onChange={e => setNewAdminEmail(e.target.value)}
-                  placeholder="teacher@gmail.com"
+                  placeholder="faculty.member@school.edu"
                   className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -165,7 +165,7 @@ export const AdminManagement: React.FC<AdminManagementProps> = ({
               <span>Permanent Super Admins</span>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400">
-              {SUPER_ADMIN_EMAILS.join(', ')} possess protected permanent super-admin authority.
+              Designated platform administrators possess protected permanent super-admin authority.
             </p>
           </div>
         </div>
@@ -219,8 +219,8 @@ export const AdminManagement: React.FC<AdminManagementProps> = ({
 
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">
-                            {admin.email}
+                          <span className="text-sm font-bold text-slate-900 dark:text-white font-mono">
+                            {maskEmail(admin.email)}
                           </span>
                           {isSuper ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 uppercase tracking-wide">

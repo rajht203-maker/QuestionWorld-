@@ -6,6 +6,7 @@ export interface GenerateQuestionsParams {
   subject: string;
   chapter: string;
   topic?: string;
+  topics?: string[];
   subCategory?: string;
   difficulty: DifficultyLevel;
   questionType: QuestionType;

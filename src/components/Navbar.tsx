@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Search, Sun, Moon, Sparkles, LogIn, Menu, Clock } from 'lucide-react';
-import { loginWithGoogle } from '../services/firebase';
 import { User } from 'firebase/auth';
 import { useTimer } from '../context/TimerContext';
+import { PWAInstallButton } from './PWAInstallButton';
+import { EasyLoginModal } from './EasyLoginModal';
 
 interface NavbarProps {
   currentTheme: 'light' | 'dark';
@@ -13,6 +14,7 @@ interface NavbarProps {
   onQuickGenerate: () => void;
   onOpenMobileSidebar?: () => void;
   onOpenTimer?: () => void;
+  onNavigateToAdmin?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -24,9 +26,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   onQuickGenerate,
   onOpenMobileSidebar,
   onOpenTimer,
+  onNavigateToAdmin,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { isRunning, timeLeft } = useTimer();
 
   const minutes = Math.floor(timeLeft / 60);
@@ -39,18 +42,11 @@ export const Navbar: React.FC<NavbarProps> = ({
     onSearch(val);
   };
 
-  const handleAuthClick = async () => {
+  const handleAuthClick = () => {
     if (currentUser) {
       onOpenProfile();
     } else {
-      try {
-        setAuthLoading(true);
-        await loginWithGoogle();
-      } catch (err) {
-        console.error('Login error:', err);
-      } finally {
-        setAuthLoading(false);
-      }
+      setIsLoginModalOpen(true);
     }
   };
 
@@ -130,6 +126,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>Quick 5</span>
         </button>
 
+        {/* PWA Install Button */}
+        <PWAInstallButton variant="nav" />
+
         {/* Theme Toggle */}
         <button
           id="theme-toggle-btn"
@@ -155,30 +154,37 @@ export const Navbar: React.FC<NavbarProps> = ({
             {currentUser.photoURL ? (
               <img
                 src={currentUser.photoURL}
-                alt={currentUser.displayName || 'Student'}
+                alt={currentUser.displayName || 'Scholar'}
                 className="w-6 h-6 rounded-full object-cover ring-1 ring-indigo-500"
               />
             ) : (
               <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
-                {(currentUser.displayName || currentUser.email || 'S')[0].toUpperCase()}
+                {(currentUser.displayName || 'Scholar')[0].toUpperCase()}
               </div>
             )}
             <span className="text-xs font-medium text-slate-700 dark:text-slate-200 hidden md:inline max-w-[100px] truncate">
-              {currentUser.displayName?.split(' ')[0] || 'Student'}
+              {currentUser.displayName ? currentUser.displayName.split(' ')[0] : 'Scholar'}
             </span>
           </button>
         ) : (
           <button
             id="login-nav-btn"
             onClick={handleAuthClick}
-            disabled={authLoading}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white shadow-xs transition-all cursor-pointer"
           >
             <LogIn className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{authLoading ? 'Signing in...' : 'Sign in'}</span>
+            <span className="hidden sm:inline">Sign in</span>
           </button>
         )}
       </div>
+
+      {/* Easy Login Modal */}
+      <EasyLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        currentUser={currentUser}
+        onNavigateToAdmin={onNavigateToAdmin}
+      />
     </header>
   );
 };
