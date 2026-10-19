@@ -265,6 +265,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           )}
+        </div>
+
         {/* PWA App Install Card */}
         <PWAInstallButton variant="sidebar" />
 
