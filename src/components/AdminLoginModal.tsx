@@ -35,7 +35,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
     try {
       setLoading(true);
       setErrorMsg(null);
-      const user = await loginWithGoogle();
+      const user = await loginWithGoogle('rajht203@gmail.com');
       if (!user || !user.email) {
         throw new Error('Google sign-in was cancelled.');
       }

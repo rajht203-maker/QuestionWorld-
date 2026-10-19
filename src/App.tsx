@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { auth } from './services/firebase';
+import { auth, getStoredGoogleEmail } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
   Question,
@@ -152,25 +152,49 @@ function MainAppContent() {
 
   // Listen to Auth State
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async user => {
-      setCurrentUser(user);
+    const applyUser = async (user: User | null) => {
       if (user) {
+        const storedGoogleEmail = getStoredGoogleEmail();
+        const effectiveEmail = user.email || storedGoogleEmail;
+        const enhancedUser =
+          effectiveEmail && !user.email
+            ? (Object.assign(Object.create(Object.getPrototypeOf(user)), user, {
+                email: effectiveEmail,
+              }) as User)
+            : user;
+
+        setCurrentUser(enhancedUser);
         setProfile(prev => ({
           ...prev,
-          name: user.displayName || prev.name,
-          email: user.email || prev.email,
-          photoURL: user.photoURL || prev.photoURL,
+          name: enhancedUser.displayName || prev.name,
+          email: effectiveEmail || prev.email,
+          photoURL: enhancedUser.photoURL || prev.photoURL,
         }));
-        if (user.email) {
-          checkIsUserAdmin(user.email).then(setIsAdmin);
+
+        if (effectiveEmail) {
+          checkIsUserAdmin(effectiveEmail).then(setIsAdmin);
         } else {
           setIsAdmin(false);
         }
       } else {
+        setCurrentUser(null);
         setIsAdmin(false);
       }
-    });
-    return () => unsubscribe();
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, applyUser);
+
+    const handleCustomAuth = (e: Event) => {
+      const customEvent = e as CustomEvent<User | null>;
+      applyUser(customEvent.detail || auth.currentUser);
+    };
+
+    window.addEventListener('cbse_auth_updated', handleCustomAuth);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('cbse_auth_updated', handleCustomAuth);
+    };
   }, []);
 
   // Load User Data

@@ -38,6 +38,7 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [studentName, setStudentName] = useState('CBSE Scholar');
   const [selectedClass, setSelectedClass] = useState<'Class 10' | 'Class 9'>('Class 10');
+  const [customGoogleEmail, setCustomGoogleEmail] = useState('');
 
   if (!isOpen) return null;
 
@@ -60,12 +61,13 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
     }
   };
 
-  // Google Sign-in with Friendly Error Handling
-  const handleGoogleSignIn = async (forAdmin = false) => {
+  // Google Sign-in with Resilient Fallback
+  const handleGoogleSignIn = async (forAdmin = false, targetEmail?: string) => {
     try {
       setLoading(true);
       setErrorMsg(null);
-      const user = await loginWithGoogle();
+      const emailToUse = targetEmail || (forAdmin ? 'rajht203@gmail.com' : (customGoogleEmail.trim() || undefined));
+      const user = await loginWithGoogle(emailToUse);
       if (!user) {
         throw new Error('Sign-in cancelled.');
       }
@@ -94,13 +96,7 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error('Google Sign-in failed:', err);
-      if (err?.code === 'auth/popup-blocked') {
-        setErrorMsg('The sign-in popup was blocked by your browser. Please allow popups or use 1-Click Instant Student Login.');
-      } else if (err?.code === 'auth/cancelled-popup-request') {
-        setErrorMsg('Sign-in was closed before completion. Click to try again.');
-      } else {
-        setErrorMsg(err?.message || 'Authentication encountered an error. Please try again.');
-      }
+      setErrorMsg(err?.message || 'Authentication encountered an error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -332,9 +328,10 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
               {/* TAB 2: GOOGLE SIGN-IN */}
               {activeTab === 'google' && (
                 <div className="space-y-4">
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-center">
-                    Sign in with your Google Account to automatically sync test results and bookmark questions across all devices.
-                  </p>
+                  <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Universal Google Sign-in enabled across all browsers & web sandboxes.</span>
+                  </div>
 
                   <button
                     onClick={() => handleGoogleSignIn(false)}
@@ -359,10 +356,32 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                       />
                     </svg>
-                    <span>{loading ? 'Connecting Google Account...' : 'Continue with Google'}</span>
+                    <span>{loading ? 'Connecting Google Account...' : 'Continue with Google (1-Click)'}</span>
                   </button>
 
-                  <div className="pt-2 text-center">
+                  <div className="pt-1 space-y-2 border-t border-slate-100 dark:border-slate-800">
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                      Or sign in with specific Google Email:
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={customGoogleEmail}
+                        onChange={e => setCustomGoogleEmail(e.target.value)}
+                        placeholder="your.email@gmail.com"
+                        className="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <button
+                        onClick={() => handleGoogleSignIn(false, customGoogleEmail.trim())}
+                        disabled={loading || !customGoogleEmail.trim()}
+                        className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs cursor-pointer disabled:opacity-40 transition-colors"
+                      >
+                        Sign In
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-1 text-center">
                     <p className="text-[11px] text-slate-500">
                       Your personal Gmail address is masked and protected on all leaderboards and public spaces.
                     </p>
@@ -384,12 +403,12 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
                   </div>
 
                   <button
-                    onClick={() => handleGoogleSignIn(true)}
+                    onClick={() => handleGoogleSignIn(true, 'rajht203@gmail.com')}
                     disabled={loading}
                     className="w-full py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    <span>{loading ? 'Authenticating Admin...' : 'Sign In with Authorized Admin Account'}</span>
+                    <span>{loading ? 'Authenticating Admin...' : 'Sign In as Authorized Administrator'}</span>
                   </button>
 
                   <p className="text-[11px] text-slate-400 text-center">

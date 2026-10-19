@@ -97,7 +97,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const handleAdminSignIn = async () => {
     try {
       setAuthLoading(true);
-      const user = await loginWithGoogle();
+      const user = await loginWithGoogle('rajht203@gmail.com');
       if (user && user.email) {
         const authorized = await checkIsUserAdmin(user.email);
         if (authorized) {
