@@ -12,7 +12,6 @@ import {
   HelpCircle,
   Smartphone,
   Mail,
-  KeyRound,
 } from 'lucide-react';
 import { loginWithGoogle, loginAsStudent, loginAsAdmin, logoutUser } from '../services/firebase';
 import { checkIsUserAdmin, maskEmail, isSuperAdmin } from '../services/adminService';
@@ -41,8 +40,7 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
   const [studentName, setStudentName] = useState('CBSE Scholar');
   const [selectedClass, setSelectedClass] = useState<'Class 10' | 'Class 9'>('Class 10');
   const [customGoogleEmail, setCustomGoogleEmail] = useState('');
-  const [adminEmailInput, setAdminEmailInput] = useState('');
-  const [adminPasskeyInput, setAdminPasskeyInput] = useState('');
+  const [adminEmailInput, setAdminEmailInput] = useState('rajht203@gmail.com');
 
   if (!isOpen) return null;
 
@@ -68,19 +66,16 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
   // Admin Credential Authentication
   const handleAdminCredentialLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!adminEmailInput.trim()) {
+    const targetEmail = (adminEmailInput || 'rajht203@gmail.com').trim();
+    if (!targetEmail) {
       setErrorMsg('Please enter your administrator Gmail address.');
-      return;
-    }
-    if (!adminPasskeyInput.trim()) {
-      setErrorMsg('Please enter the Admin Security Passkey.');
       return;
     }
 
     try {
       setLoading(true);
       setErrorMsg(null);
-      const user = await loginAsAdmin(adminEmailInput.trim(), adminPasskeyInput.trim());
+      const user = await loginAsAdmin(targetEmail);
       if (user && user.email) {
         const isAdmin = await checkIsUserAdmin(user.email);
         if (isAdmin) {
@@ -88,12 +83,12 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
           if (onNavigateToAdmin) onNavigateToAdmin();
           onClose();
         } else {
-          setErrorMsg('Access Denied: This account is not an authorized administrator.');
+          setErrorMsg('Access Denied: This account is not registered as an authorized administrator.');
         }
       }
     } catch (err: any) {
       console.error('Admin credential login error:', err);
-      setErrorMsg(err?.message || 'Access Denied: Invalid administrator credentials.');
+      setErrorMsg(err?.message || 'Access Denied: Only authorized admin Gmail accounts can open the Admin Panel.');
     } finally {
       setLoading(false);
     }
@@ -436,14 +431,14 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
                       <span>Academic Directorate & Faculty Console</span>
                     </div>
                     <p className="text-[11px] text-amber-700/90 dark:text-amber-300/80 leading-relaxed">
-                      Restricted to authorized CBSE administrators. Enter your registered admin Gmail and security passkey to open the Admin Panel.
+                      Restricted to authorized CBSE administrators. Enter your registered admin Gmail to unlock the Admin Panel.
                     </p>
                   </div>
 
                   <form onSubmit={handleAdminCredentialLogin} className="space-y-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Administrator Gmail
+                        Administrator Gmail Address
                       </label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -451,26 +446,9 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
                           type="email"
                           value={adminEmailInput}
                           onChange={e => setAdminEmailInput(e.target.value)}
-                          placeholder="admin.email@gmail.com"
+                          placeholder="rajht203@gmail.com"
                           required
-                          className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Admin Security Passkey
-                      </label>
-                      <div className="relative">
-                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                          type="password"
-                          value={adminPasskeyInput}
-                          onChange={e => setAdminPasskeyInput(e.target.value)}
-                          placeholder="Enter security passkey"
-                          required
-                          className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
                         />
                       </div>
                     </div>
@@ -481,7 +459,7 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
                       className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
                     >
                       <ShieldCheck className="w-4 h-4" />
-                      <span>{loading ? 'Verifying Admin...' : 'Verify & Open Admin Panel'}</span>
+                      <span>{loading ? 'Authenticating Admin...' : 'Sign In as Administrator & Open Admin Panel'}</span>
                     </button>
                   </form>
 

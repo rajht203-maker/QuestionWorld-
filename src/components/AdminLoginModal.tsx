@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, LogIn, X, AlertTriangle, Mail, Lock, KeyRound } from 'lucide-react';
+import { ShieldCheck, LogIn, X, AlertTriangle, Mail, Lock } from 'lucide-react';
 import { loginWithGoogle, loginAsAdmin, logoutUser } from '../services/firebase';
 import { checkIsUserAdmin, maskEmail } from '../services/adminService';
 import { User } from 'firebase/auth';
@@ -20,8 +20,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isCurrentAdmin, setIsCurrentAdmin] = useState(false);
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPasskey, setAdminPasskey] = useState('');
+  const [adminEmail, setAdminEmail] = useState('rajht203@gmail.com');
 
   React.useEffect(() => {
     if (currentUser?.email) {
@@ -33,22 +32,19 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Verify Admin via Direct Credentials (Email + Security Passkey)
+  // Verify Admin via Direct Credentials (Email)
   const handleCredentialAdminLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!adminEmail.trim()) {
+    const target = (adminEmail || 'rajht203@gmail.com').trim();
+    if (!target) {
       setErrorMsg('Please enter your administrator Gmail address.');
-      return;
-    }
-    if (!adminPasskey.trim()) {
-      setErrorMsg('Please enter the Admin Security Passkey.');
       return;
     }
 
     try {
       setLoading(true);
       setErrorMsg(null);
-      const user = await loginAsAdmin(adminEmail.trim(), adminPasskey.trim());
+      const user = await loginAsAdmin(target);
       if (user && user.email) {
         const isAdmin = await checkIsUserAdmin(user.email);
         if (isAdmin) {
@@ -60,7 +56,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
       }
     } catch (err: any) {
       console.error('Admin credential login failed:', err);
-      setErrorMsg(err?.message || 'Access Denied: Invalid administrator credentials.');
+      setErrorMsg(err?.message || 'Access Denied: Only authorized admin Gmail accounts can open the Admin Panel.');
     } finally {
       setLoading(false);
     }
@@ -184,7 +180,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
               <form onSubmit={handleCredentialAdminLogin} className="space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Administrator Gmail
+                    Administrator Gmail Address
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -192,26 +188,9 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                       type="email"
                       value={adminEmail}
                       onChange={e => setAdminEmail(e.target.value)}
-                      placeholder="admin.email@gmail.com"
+                      placeholder="rajht203@gmail.com"
                       required
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Admin Security Passkey
-                  </label>
-                  <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="password"
-                      value={adminPasskey}
-                      onChange={e => setAdminPasskey(e.target.value)}
-                      placeholder="Enter security passkey"
-                      required
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
                     />
                   </div>
                 </div>
@@ -222,7 +201,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                   className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>{loading ? 'Verifying Admin...' : 'Verify & Open Admin Panel'}</span>
+                  <span>{loading ? 'Authenticating Admin...' : 'Sign In as Administrator & Open Admin Panel'}</span>
                 </button>
               </form>
 

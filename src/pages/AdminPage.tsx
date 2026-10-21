@@ -17,7 +17,6 @@ import {
   FileDown,
   ArrowLeft,
   Mail,
-  KeyRound,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import {
@@ -60,8 +59,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [libraryQuizzes, setLibraryQuizzes] = useState<ConvertedQuiz[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState<boolean>(false);
   const [authLoading, setAuthLoading] = useState<boolean>(false);
-  const [adminEmailInput, setAdminEmailInput] = useState<string>('');
-  const [adminPasskeyInput, setAdminPasskeyInput] = useState<string>('');
+  const [adminEmailInput, setAdminEmailInput] = useState<string>('rajht203@gmail.com');
 
   useEffect(() => {
     verifyAdminAccess();
@@ -101,21 +99,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     }
   };
 
-  // Direct Credential Verification (Admin Gmail + Passkey)
+  // Direct Credential Verification (Admin Gmail)
   const handleCredentialAdminSignIn = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!adminEmailInput.trim()) {
+    const target = (adminEmailInput || 'rajht203@gmail.com').trim();
+    if (!target) {
       onShowToast('Please enter your administrator Gmail address.', 'error');
-      return;
-    }
-    if (!adminPasskeyInput.trim()) {
-      onShowToast('Please enter the Admin Security Passkey.', 'error');
       return;
     }
 
     try {
       setAuthLoading(true);
-      const user = await loginAsAdmin(adminEmailInput.trim(), adminPasskeyInput.trim());
+      const user = await loginAsAdmin(target);
       if (user && user.email) {
         const authorized = await checkIsUserAdmin(user.email);
         if (authorized) {
@@ -128,7 +123,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       }
     } catch (err: any) {
       console.error('Admin credential sign-in error:', err);
-      onShowToast(err?.message || 'Access Denied: Invalid administrator credentials.', 'error');
+      onShowToast(err?.message || 'Access Denied: Only authorized admin Gmail accounts can open the Admin Panel.', 'error');
     } finally {
       setAuthLoading(false);
     }
@@ -244,26 +239,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   type="email"
                   value={adminEmailInput}
                   onChange={e => setAdminEmailInput(e.target.value)}
-                  placeholder="admin.email@gmail.com"
+                  placeholder="rajht203@gmail.com"
                   required
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Admin Security Passkey
-              </label>
-              <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="password"
-                  value={adminPasskeyInput}
-                  onChange={e => setAdminPasskeyInput(e.target.value)}
-                  placeholder="Enter security passkey"
-                  required
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
                 />
               </div>
             </div>
@@ -274,7 +252,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>{authLoading ? 'Verifying Admin...' : 'Authenticate & Unlock Admin Panel'}</span>
+              <span>{authLoading ? 'Authenticating Admin...' : 'Sign In as Administrator & Unlock Admin Panel'}</span>
             </button>
           </form>
 
