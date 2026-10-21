@@ -14,7 +14,10 @@ import {
   Calendar,
   Clock,
   Trash2,
-  FileDown
+  FileDown,
+  ArrowLeft,
+  Mail,
+  KeyRound,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import {
@@ -24,7 +27,7 @@ import {
   deleteConvertedQuizFromCloud,
   maskEmail
 } from '../services/adminService';
-import { loginWithGoogle, logoutUser } from '../services/firebase';
+import { loginWithGoogle, loginAsAdmin, logoutUser } from '../services/firebase';
 import { ConvertedQuiz } from '../types';
 import { AdminPdfUploader } from '../components/AdminPdfUploader';
 import { SimpleQuizView } from '../components/SimpleQuizView';
@@ -41,11 +44,13 @@ type ViewMode = 'upload' | 'quiz' | 'pdf';
 interface AdminPageProps {
   currentUser: User | null;
   onShowToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
+  onBack?: () => void;
 }
 
 export const AdminPage: React.FC<AdminPageProps> = ({
   currentUser,
   onShowToast,
+  onBack,
 }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
@@ -55,6 +60,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [libraryQuizzes, setLibraryQuizzes] = useState<ConvertedQuiz[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState<boolean>(false);
   const [authLoading, setAuthLoading] = useState<boolean>(false);
+  const [adminEmailInput, setAdminEmailInput] = useState<string>('');
+  const [adminPasskeyInput, setAdminPasskeyInput] = useState<string>('');
 
   useEffect(() => {
     verifyAdminAccess();
@@ -94,17 +101,52 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     }
   };
 
-  const handleAdminSignIn = async () => {
+  // Direct Credential Verification (Admin Gmail + Passkey)
+  const handleCredentialAdminSignIn = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!adminEmailInput.trim()) {
+      onShowToast('Please enter your administrator Gmail address.', 'error');
+      return;
+    }
+    if (!adminPasskeyInput.trim()) {
+      onShowToast('Please enter the Admin Security Passkey.', 'error');
+      return;
+    }
+
     try {
       setAuthLoading(true);
-      const user = await loginWithGoogle('rajht203@gmail.com');
+      const user = await loginAsAdmin(adminEmailInput.trim(), adminPasskeyInput.trim());
       if (user && user.email) {
         const authorized = await checkIsUserAdmin(user.email);
         if (authorized) {
           setIsAdmin(true);
           onShowToast('Welcome, Administrator!', 'success');
+          loadLibrary();
         } else {
-          onShowToast('Signed in successfully, but this account lacks administrator rights.', 'error');
+          onShowToast('Access Denied: This account lacks administrator rights.', 'error');
+        }
+      }
+    } catch (err: any) {
+      console.error('Admin credential sign-in error:', err);
+      onShowToast(err?.message || 'Access Denied: Invalid administrator credentials.', 'error');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // Google OAuth Admin Sign-In
+  const handleAdminSignIn = async () => {
+    try {
+      setAuthLoading(true);
+      const user = await loginWithGoogle();
+      if (user && user.email) {
+        const authorized = await checkIsUserAdmin(user.email);
+        if (authorized) {
+          setIsAdmin(true);
+          onShowToast('Welcome, Administrator!', 'success');
+          loadLibrary();
+        } else {
+          onShowToast('Access Denied: Signed-in account lacks administrator rights.', 'error');
         }
       }
     } catch (err: any) {
@@ -155,7 +197,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   // 2. Access Restricted State (When user is not an authorized admin)
   if (!isAdmin) {
     return (
-      <div className="max-w-xl mx-auto py-12 px-4">
+      <div className="max-w-xl mx-auto py-8 px-4 space-y-4">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors cursor-pointer w-fit"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Student Dashboard</span>
+          </button>
+        )}
+
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-lg space-y-6">
           <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-sm">
             <Lock className="w-8 h-8" />
@@ -166,46 +218,84 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               Administrator Console Restricted
             </h2>
             <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
-              This portal is restricted to authorized QuestionWorld educators and administrators.
+              This console is restricted to verified CBSE academic administrators only. Students cannot access the admin panel.
             </p>
           </div>
 
-          {currentUser ? (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs space-y-2">
-              <span className="text-slate-500 block">Signed in with student account:</span>
-              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                {maskEmail(currentUser.email)}
-              </span>
-              <p className="text-rose-600 dark:text-rose-400 text-[11px] pt-1">
-                Account does not have administrator privileges.
+          {currentUser && (
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 text-left space-y-1">
+              <span className="font-bold block">Current Active Session:</span>
+              <span className="font-mono text-[11px] block">{maskEmail(currentUser.email)}</span>
+              <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold pt-0.5">
+                Current account lacks administrator privileges.
               </p>
-              <button
-                onClick={async () => {
-                  await logoutUser();
-                  handleAdminSignIn();
-                }}
-                disabled={authLoading}
-                className="mt-2 w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer"
-              >
-                {authLoading ? 'Signing in...' : 'Sign in with Admin Google Account'}
-              </button>
             </div>
-          ) : (
-            <button
-              onClick={handleAdminSignIn}
-              disabled={authLoading}
-              className="w-full py-3 px-5 rounded-2xl font-bold text-sm bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>{authLoading ? 'Authenticating...' : 'Sign In as Administrator'}</span>
-            </button>
           )}
 
+          {/* Secure Admin Verification Form */}
+          <form onSubmit={handleCredentialAdminSignIn} className="space-y-3 text-left">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Administrator Gmail Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="email"
+                  value={adminEmailInput}
+                  onChange={e => setAdminEmailInput(e.target.value)}
+                  placeholder="admin.email@gmail.com"
+                  required
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Admin Security Passkey
+              </label>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="password"
+                  value={adminPasskeyInput}
+                  onChange={e => setAdminPasskeyInput(e.target.value)}
+                  placeholder="Enter security passkey"
+                  required
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>{authLoading ? 'Verifying Admin...' : 'Authenticate & Unlock Admin Panel'}</span>
+            </button>
+          </form>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+            <span className="flex-shrink mx-3 text-[11px] text-slate-400">OR</span>
+            <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleAdminSignIn}
+            disabled={authLoading}
+            className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 font-semibold text-xs text-slate-800 dark:text-slate-100 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <LogIn className="w-4 h-4 text-indigo-500" />
+            <span>Sign in with Google OAuth</span>
+          </button>
+
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400">
-            Restricted Console:
-            <span className="text-slate-500 dark:text-slate-400 ml-1 block mt-0.5">
-              Protected administrator access only. Contact your academic administrator for access.
-            </span>
+            Protected administrator access only. Contact your academic administrator for access.
           </div>
         </div>
       </div>
@@ -235,7 +325,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-all cursor-pointer shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Exit to Dashboard</span>
+              </button>
+            )}
+
             <div className="px-3.5 py-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-xs">
               <span className="text-indigo-200 block text-[10px]">Logged in as</span>
               <span className="font-bold">{currentUser?.displayName || (isSuperAdmin(currentUser?.email) ? 'Chief Academic Administrator' : 'Administrator')}</span>

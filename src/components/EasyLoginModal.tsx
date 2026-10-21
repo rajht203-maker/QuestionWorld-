@@ -10,9 +10,11 @@ import {
   Lock,
   CheckCircle,
   HelpCircle,
-  Smartphone
+  Smartphone,
+  Mail,
+  KeyRound,
 } from 'lucide-react';
-import { loginWithGoogle, loginAsStudent, logoutUser } from '../services/firebase';
+import { loginWithGoogle, loginAsStudent, loginAsAdmin, logoutUser } from '../services/firebase';
 import { checkIsUserAdmin, maskEmail, isSuperAdmin } from '../services/adminService';
 import { User } from 'firebase/auth';
 
@@ -39,6 +41,8 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
   const [studentName, setStudentName] = useState('CBSE Scholar');
   const [selectedClass, setSelectedClass] = useState<'Class 10' | 'Class 9'>('Class 10');
   const [customGoogleEmail, setCustomGoogleEmail] = useState('');
+  const [adminEmailInput, setAdminEmailInput] = useState('');
+  const [adminPasskeyInput, setAdminPasskeyInput] = useState('');
 
   if (!isOpen) return null;
 
@@ -61,12 +65,46 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
     }
   };
 
+  // Admin Credential Authentication
+  const handleAdminCredentialLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!adminEmailInput.trim()) {
+      setErrorMsg('Please enter your administrator Gmail address.');
+      return;
+    }
+    if (!adminPasskeyInput.trim()) {
+      setErrorMsg('Please enter the Admin Security Passkey.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMsg(null);
+      const user = await loginAsAdmin(adminEmailInput.trim(), adminPasskeyInput.trim());
+      if (user && user.email) {
+        const isAdmin = await checkIsUserAdmin(user.email);
+        if (isAdmin) {
+          if (onLoginSuccess) onLoginSuccess(user);
+          if (onNavigateToAdmin) onNavigateToAdmin();
+          onClose();
+        } else {
+          setErrorMsg('Access Denied: This account is not an authorized administrator.');
+        }
+      }
+    } catch (err: any) {
+      console.error('Admin credential login error:', err);
+      setErrorMsg(err?.message || 'Access Denied: Invalid administrator credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Google Sign-in with Resilient Fallback
   const handleGoogleSignIn = async (forAdmin = false, targetEmail?: string) => {
     try {
       setLoading(true);
       setErrorMsg(null);
-      const emailToUse = targetEmail || (forAdmin ? 'rajht203@gmail.com' : (customGoogleEmail.trim() || undefined));
+      const emailToUse = targetEmail || (customGoogleEmail.trim() || undefined);
       const user = await loginWithGoogle(emailToUse);
       if (!user) {
         throw new Error('Sign-in cancelled.');
@@ -83,7 +121,7 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
           return;
         } else {
           setErrorMsg(
-            'Your Google account is signed in, but it is not registered as an authorized administrator. You can still practice quizzes as a scholar!'
+            'Access Denied: Your Google account is not registered as an authorized administrator. Only verified admin Gmail accounts can open the Admin Panel.'
           );
           if (onLoginSuccess) onLoginSuccess(user);
           return;
@@ -398,21 +436,73 @@ export const EasyLoginModal: React.FC<EasyLoginModalProps> = ({
                       <span>Academic Directorate & Faculty Console</span>
                     </div>
                     <p className="text-[11px] text-amber-700/90 dark:text-amber-300/80 leading-relaxed">
-                      Restricted to authorized CBSE teachers and question creators to upload PDFs, run AI pipelines, and publish tests.
+                      Restricted to authorized CBSE administrators. Enter your registered admin Gmail and security passkey to open the Admin Panel.
                     </p>
                   </div>
 
+                  <form onSubmit={handleAdminCredentialLogin} className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Administrator Gmail
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                          type="email"
+                          value={adminEmailInput}
+                          onChange={e => setAdminEmailInput(e.target.value)}
+                          placeholder="admin.email@gmail.com"
+                          required
+                          className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Admin Security Passkey
+                      </label>
+                      <div className="relative">
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                          type="password"
+                          value={adminPasskeyInput}
+                          onChange={e => setAdminPasskeyInput(e.target.value)}
+                          placeholder="Enter security passkey"
+                          required
+                          className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>{loading ? 'Verifying Admin...' : 'Verify & Open Admin Panel'}</span>
+                    </button>
+                  </form>
+
+                  <div className="relative flex py-1 items-center">
+                    <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                    <span className="flex-shrink mx-3 text-[11px] text-slate-400">OR</span>
+                    <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                  </div>
+
                   <button
-                    onClick={() => handleGoogleSignIn(true, 'rajht203@gmail.com')}
+                    type="button"
+                    onClick={() => handleGoogleSignIn(true)}
                     disabled={loading}
-                    className="w-full py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 font-semibold text-xs text-slate-800 dark:text-slate-100 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
                   >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>{loading ? 'Authenticating Admin...' : 'Sign In as Authorized Administrator'}</span>
+                    <ShieldCheck className="w-4 h-4 text-indigo-500" />
+                    <span>Sign in with Admin Google Account</span>
                   </button>
 
                   <p className="text-[11px] text-slate-400 text-center">
-                    Admin email addresses and personal identity are securely protected and concealed across all student-facing views.
+                    Only authorized admin Gmail accounts with valid security credentials can access the Admin Panel.
                   </p>
                 </div>
               )}

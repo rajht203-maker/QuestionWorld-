@@ -178,6 +178,54 @@ export async function checkIsUserAdmin(email?: string | null): Promise<boolean> 
   return false;
 }
 
+export const ADMIN_SECURITY_PASSKEYS: string[] = [
+  'cbse2026admin',
+  'admin2026',
+  'rajht@2026',
+  'prince@2026',
+  'admin123',
+  'cbseAdmin99',
+];
+
+/**
+ * Strictly verifies whether an email and security passkey belong to an authorized administrator.
+ */
+export async function verifyAdminCredentials(
+  email: string,
+  passkey: string
+): Promise<{ success: boolean; message?: string }> {
+  const normalized = normalizeEmail(email);
+  if (!normalized || !normalized.includes('@')) {
+    return { success: false, message: 'Please enter a valid administrator Gmail address.' };
+  }
+
+  const isAuthorized = await checkIsUserAdmin(normalized);
+  if (!isAuthorized) {
+    return {
+      success: false,
+      message: 'Access Denied: This Gmail address is not registered as an authorized administrator. Only verified admin Gmail accounts can open the Admin Panel.'
+    };
+  }
+
+  const cleanKey = (passkey || '').trim();
+  if (!cleanKey) {
+    return { success: false, message: 'Admin security passkey is required.' };
+  }
+
+  const isValidKey = ADMIN_SECURITY_PASSKEYS.some(
+    k => k.toLowerCase() === cleanKey.toLowerCase()
+  );
+
+  if (!isValidKey) {
+    return {
+      success: false,
+      message: 'Access Denied: Incorrect Admin Security Passkey. Access restricted to authorized personnel.'
+    };
+  }
+
+  return { success: true };
+}
+
 export async function addAdminUser(
   emailToAdd: string,
   addedByEmail: string,

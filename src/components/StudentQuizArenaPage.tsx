@@ -34,12 +34,14 @@ interface StudentQuizArenaPageProps {
   userId?: string;
   userName?: string;
   onShowToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
+  onBack?: () => void;
 }
 
 export const StudentQuizArenaPage: React.FC<StudentQuizArenaPageProps> = ({
   userId = 'anonymous_student',
   userName = 'Student',
   onShowToast,
+  onBack,
 }) => {
   const [quizzesList, setQuizzesList] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -294,9 +296,20 @@ export const StudentQuizArenaPage: React.FC<StudentQuizArenaPageProps> = ({
       <div className="space-y-6">
         {/* Banner */}
         <div className="bg-gradient-to-r from-indigo-700 via-teal-700 to-emerald-700 rounded-3xl p-6 sm:p-8 text-white shadow-lg space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-xs text-xs font-bold uppercase">
-            <Award className="w-3.5 h-3.5 text-amber-300" />
-            CBSE Class 9 & 10 Quiz Arena
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-xs text-xs font-bold uppercase">
+              <Award className="w-3.5 h-3.5 text-amber-300" />
+              CBSE Class 9 & 10 Quiz Arena
+            </div>
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Dashboard</span>
+              </button>
+            )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Official Exam Papers Converted to Interactive Quizzes

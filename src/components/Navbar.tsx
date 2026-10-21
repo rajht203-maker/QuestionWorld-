@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Sun, Moon, Sparkles, LogIn, Menu, Clock } from 'lucide-react';
+import { Search, Sun, Moon, Sparkles, LogIn, Menu, Clock, ArrowLeft } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { useTimer } from '../context/TimerContext';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -15,6 +15,8 @@ interface NavbarProps {
   onOpenMobileSidebar?: () => void;
   onOpenTimer?: () => void;
   onNavigateToAdmin?: () => void;
+  canGoBack?: boolean;
+  onGoBack?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -27,6 +29,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenMobileSidebar,
   onOpenTimer,
   onNavigateToAdmin,
+  canGoBack,
+  onGoBack,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -55,14 +59,27 @@ export const Navbar: React.FC<NavbarProps> = ({
       id="top-navbar"
       className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 px-4 md:px-6 py-2.5 backdrop-blur-md transition-colors"
     >
-      {/* Left: Mobile Menu Toggle + Global Search */}
+      {/* Left: Back Button + Mobile Menu Toggle + Global Search */}
       <div className="flex items-center flex-1 max-w-xl mr-3">
+        {canGoBack && onGoBack && (
+          <button
+            id="navbar-back-btn"
+            onClick={onGoBack}
+            aria-label="Go back to previous page"
+            title="Go back"
+            className="mr-2 flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs transition-all cursor-pointer shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <span className="hidden sm:inline">Back</span>
+          </button>
+        )}
+
         {onOpenMobileSidebar && (
           <button
             id="mobile-menu-toggle-btn"
             onClick={onOpenMobileSidebar}
             aria-label="Open Navigation Sidebar"
-            className="md:hidden mr-2 p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="md:hidden mr-2 p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
           >
             <Menu className="w-5 h-5" />
           </button>

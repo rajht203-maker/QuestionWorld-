@@ -19,7 +19,8 @@ import {
   BookOpen,
   GraduationCap,
   Shield,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft,
 } from 'lucide-react';
 import { checkIsUserAdmin, isSuperAdmin, maskEmail } from '../services/adminService';
 
@@ -31,6 +32,7 @@ interface ProfilePageProps {
   onToggleTheme: () => void;
   onShowToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
   onNavigateToAdmin?: () => void;
+  onBack?: () => void;
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({
@@ -41,6 +43,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   onToggleTheme,
   onShowToast,
   onNavigateToAdmin,
+  onBack,
 }) => {
   const [name, setName] = useState(profile.name);
   const [preferredSubject, setPreferredSubject] = useState(profile.preferredSubject);
@@ -95,6 +98,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   return (
     <div id="profile-page-container" className="space-y-6 max-w-3xl mx-auto">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors cursor-pointer w-fit"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Dashboard</span>
+        </button>
+      )}
+
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
           <GraduationCap className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />

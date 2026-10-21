@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { auth, getStoredGoogleEmail } from './services/firebase';
+import { auth, getStoredGoogleEmail, getStoredStudentSession } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
   Question,
@@ -60,10 +60,31 @@ interface Toast {
 function MainAppContent() {
   // Navigation
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  const [tabHistory, setTabHistory] = useState<NavTab[]>(['dashboard']);
   const [generatorSubject, setGeneratorSubject] = useState<string>('science');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
   const [showTimerModal, setShowTimerModal] = useState<boolean>(false);
   const [verificationTestId, setVerificationTestId] = useState<string | null>(null);
+
+  const navigateToTab = (tab: NavTab) => {
+    if (tab === activeTab) return;
+    setTabHistory(prev => [...prev, tab]);
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGoBack = () => {
+    if (tabHistory.length > 1) {
+      const updated = [...tabHistory];
+      updated.pop(); // remove current active tab
+      const previous = updated[updated.length - 1] || 'dashboard';
+      setTabHistory(updated);
+      setActiveTab(previous);
+    } else {
+      setActiveTab('dashboard');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const checkVerifyUrl = () => {
@@ -177,6 +198,33 @@ function MainAppContent() {
           setIsAdmin(false);
         }
       } else {
+        const storedStudent = getStoredStudentSession();
+        const storedGoogleEmail = getStoredGoogleEmail();
+        if (storedStudent || storedGoogleEmail) {
+          const effectiveEmail = storedGoogleEmail || storedStudent?.email || null;
+          const fallbackUser = (storedStudent || {
+            uid: `scholar-session-${Date.now()}`,
+            displayName: effectiveEmail ? 'Chief Academic Administrator' : 'Class 10 Scholar',
+            email: effectiveEmail,
+            isAnonymous: !effectiveEmail,
+            emailVerified: !!effectiveEmail,
+          }) as unknown as User;
+
+          setCurrentUser(fallbackUser);
+          setProfile(prev => ({
+            ...prev,
+            name: fallbackUser.displayName || prev.name,
+            email: effectiveEmail || prev.email,
+          }));
+
+          if (effectiveEmail) {
+            checkIsUserAdmin(effectiveEmail).then(setIsAdmin);
+          } else {
+            setIsAdmin(false);
+          }
+          return;
+        }
+
         setCurrentUser(null);
         setIsAdmin(false);
       }
@@ -324,7 +372,7 @@ function MainAppContent() {
         <Sidebar
           activeTab={activeTab}
           onSelectTab={tab => {
-            setActiveTab(tab);
+            navigateToTab(tab);
             setMobileSidebarOpen(false);
           }}
           savedCount={favourites.length}
@@ -337,7 +385,7 @@ function MainAppContent() {
         {/* MAIN CONTENT AREA */}
         <div className="flex-1 flex flex-col min-w-0 pb-20 md:pb-6">
           {/* GLOBAL ANNOUNCEMENT & ACADEMIC SESSION TICKER */}
-          <GlobalAnnouncementBar onActionClick={() => setActiveTab('generator')} />
+          <GlobalAnnouncementBar onActionClick={() => navigateToTab('generator')} />
 
           {/* TOP NAVBAR */}
           <Navbar
@@ -345,11 +393,13 @@ function MainAppContent() {
             onToggleTheme={handleToggleTheme}
             onSearch={handleSearch}
             currentUser={currentUser}
-            onOpenProfile={() => setActiveTab('profile')}
+            onOpenProfile={() => navigateToTab('profile')}
             onQuickGenerate={handleQuickGenerate}
             onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
-            onOpenTimer={() => setActiveTab('timer')}
-            onNavigateToAdmin={() => setActiveTab('admin')}
+            onOpenTimer={() => navigateToTab('timer')}
+            onNavigateToAdmin={() => navigateToTab('admin')}
+            canGoBack={activeTab !== 'dashboard' || tabHistory.length > 1}
+            onGoBack={handleGoBack}
           />
 
           {/* PAGE ROUTING */}
@@ -358,10 +408,10 @@ function MainAppContent() {
               <LandingPage
                 onStartGenerating={subKey => {
                   if (subKey) setGeneratorSubject(subKey);
-                  setActiveTab('generator');
+                  navigateToTab('generator');
                 }}
-                onStartTestBuilder={() => setActiveTab('test_builder')}
-                onGoToDashboard={() => setActiveTab('dashboard')}
+                onStartTestBuilder={() => navigateToTab('test_builder')}
+                onGoToDashboard={() => navigateToTab('dashboard')}
               />
             )}
 
@@ -375,9 +425,9 @@ function MainAppContent() {
                 onQuickGenerate={handleQuickGenerate}
                 onNavigate={(tab, subKey) => {
                   if (subKey) setGeneratorSubject(subKey);
-                  setActiveTab(tab);
+                  navigateToTab(tab);
                 }}
-                onOpenTimer={() => setActiveTab('timer')}
+                onOpenTimer={() => navigateToTab('timer')}
               />
             )}
 
@@ -386,6 +436,7 @@ function MainAppContent() {
                 userId={currentUser?.uid || 'guest'}
                 userName={currentUser?.displayName || profile.name}
                 onShowToast={showToast}
+                onBack={handleGoBack}
               />
             )}
 
@@ -449,7 +500,8 @@ function MainAppContent() {
                 currentTheme={theme}
                 onToggleTheme={handleToggleTheme}
                 onShowToast={showToast}
-                onNavigateToAdmin={() => setActiveTab('admin')}
+                onNavigateToAdmin={() => navigateToTab('admin')}
+                onBack={handleGoBack}
               />
             )}
 
@@ -457,6 +509,7 @@ function MainAppContent() {
               <AdminPage
                 currentUser={currentUser}
                 onShowToast={showToast}
+                onBack={handleGoBack}
               />
             )}
           </main>
